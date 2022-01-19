@@ -1,4 +1,4 @@
-pragma solidity ^0.8.0;
+pragma solidity 0.8.4;
 
 import "./lib/IMintAndBurnable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
@@ -18,7 +18,6 @@ contract OperatorWallet is Initializable, ContextUpgradeable, ReentrancyGuardUpg
 
     mapping(address => uint256) hotWalletsMap;
     address[] public hotWallets;
-    uint256 public numOfHotWallets;
 
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
     event OwnershipAccepted(address indexed previousOwner, address indexed newOwner);
@@ -32,17 +31,17 @@ contract OperatorWallet is Initializable, ContextUpgradeable, ReentrancyGuardUpg
 
     receive() external payable {}
 
-    function initialize(address initialOwner, address initialOperator) external {
+    function initialize(address initialOwner, address initialOperator) external initializer{
         __ContractWallet_init(initialOwner, initialOperator);
     }
 
-    function __ContractWallet_init(address initialOwner, address initialOperator) internal initializer {
+    function __ContractWallet_init(address initialOwner, address initialOperator) internal {
         __Context_init_unchained();
         __ReentrancyGuard_init_unchained();
         __ContractWallet_init_unchained(initialOwner, initialOperator);
     }
 
-    function __ContractWallet_init_unchained(address initialOwner, address initialOperator) internal initializer {
+    function __ContractWallet_init_unchained(address initialOwner, address initialOperator) internal {
         require(initialOwner != address(0), "OperatorWallet: owner is a zero address");
 
         _owner = initialOwner;
@@ -61,12 +60,12 @@ contract OperatorWallet is Initializable, ContextUpgradeable, ReentrancyGuardUpg
     }
 
     modifier onlyOwner() {
-        require(_owner == _msgSender(), "OperatorWallet: caller is not the owner");
+        require(_owner == msg.sender, "OperatorWallet: caller is not the owner");
         _;
     }
 
     modifier onlyOperator() {
-        require(_operator == _msgSender(), "OperatorWallet: caller is not the operator");
+        require(_operator == msg.sender, "OperatorWallet: caller is not the operator");
         _;
     }
 
@@ -94,8 +93,11 @@ contract OperatorWallet is Initializable, ContextUpgradeable, ReentrancyGuardUpg
         require(hotWalletsMap[hotwallet] == 0, "OperatorWallet: hotwallet already exist");
         hotWallets.push(hotwallet);
         hotWalletsMap[hotwallet] = hotWallets.length;
-        numOfHotWallets +=1;
         emit HotWalletAdded(hotwallet);
+    }
+
+    function numOfHotWallets() external view returns(uint256) {
+        return hotWallets.length;
     }
 
     function removeHotWallet(address hotwallet) external onlyOwner {
@@ -107,13 +109,13 @@ contract OperatorWallet is Initializable, ContextUpgradeable, ReentrancyGuardUpg
             hotWalletsMap[hotWallets[idx-1]] = idx;
         }
         hotWallets.pop();
-        numOfHotWallets -=1;
         delete hotWalletsMap[hotwallet];
         emit HotWalletRemoved(hotwallet);
     }
 
     function changeOperator(address newOperator) external onlyOwner {
         require(newOperator != address(0), "OperatorWallet: operator is a zero address");
+        require(newOperator != _operator, "OperatorWallet: already an operator");
 
         emit OperatorTransferred(_operator, newOperator);
         _operator = newOperator;

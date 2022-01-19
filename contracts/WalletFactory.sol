@@ -1,4 +1,4 @@
-pragma solidity ^0.8.0;
+pragma solidity 0.8.4;
 
 import './UpgradeableProxy.sol';
 import './lib/IProxyInitialize.sol';
@@ -35,7 +35,7 @@ contract WalletFactory is ContextUpgradeable{
     }
 
     modifier onlyOwner() {
-        require(_owner == _msgSender(), "ContractWalletFactory: caller is not the owner");
+        require(_owner == msg.sender, "ContractWalletFactory: caller is not the owner");
         _;
     }
 
@@ -54,8 +54,10 @@ contract WalletFactory is ContextUpgradeable{
     }
 
     function createOperatorWallet(address walletOwner, address walletOperator, address proxyAdmin) external onlyOwner returns (address) {
-        require(walletOwner != proxyAdmin, "wallet owner is the same as the proxy admin");
-        require(walletOperator != proxyAdmin, "wallet operator is the same as the proxy admin");
+        require(walletOwner != proxyAdmin, "ContractWalletFactory: wallet owner is the same as the proxy admin");
+        require(walletOperator != proxyAdmin, "ContractWalletFactory: wallet operator is the same as the proxy admin");
+        require(walletOwner != address(0) && walletOperator != address(0) && proxyAdmin != address(0),
+            "ContractWalletFactory: zero address");
         UpgradeableProxy walletProxy = new UpgradeableProxy(_operatorWalletImplement, proxyAdmin, "");
         IProxyOperatorInitialize wallet = IProxyOperatorInitialize(address(walletProxy));
         wallet.initialize(walletOwner, walletOperator);
@@ -64,7 +66,9 @@ contract WalletFactory is ContextUpgradeable{
     }
 
     function createBurnWallet(address walletOwner, address proxyAdmin) external onlyOwner returns (address) {
-        require(walletOwner != proxyAdmin, "wallet owner is the same as the proxy admin");
+        require(walletOwner != proxyAdmin, "ContractWalletFactory: wallet owner is the same as the proxy admin");
+        require(walletOwner != address(0) && proxyAdmin != address(0),
+            "ContractWalletFactory: zero address");
         UpgradeableProxy walletProxy = new UpgradeableProxy(_burnWalletImplement, proxyAdmin, "");
         IProxyBurnInitialize wallet = IProxyBurnInitialize(address(walletProxy));
         wallet.initialize(walletOwner);

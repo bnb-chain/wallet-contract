@@ -1,4 +1,4 @@
-pragma solidity ^0.8.0;
+pragma solidity 0.8.4;
 
 import "./lib/IMintAndBurnable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
@@ -18,17 +18,17 @@ contract BurnWallet is Initializable, ContextUpgradeable, ReentrancyGuardUpgrade
 
     receive() external payable {}
 
-    function initialize(address initialOwner) external {
+    function initialize(address initialOwner) external initializer {
         __ContractWallet_init(initialOwner);
     }
 
-    function __ContractWallet_init(address initialOwner) internal initializer {
+    function __ContractWallet_init(address initialOwner) internal {
         __Context_init_unchained();
         __ReentrancyGuard_init_unchained();
         __ContractWallet_init_unchained(initialOwner);
     }
 
-    function __ContractWallet_init_unchained(address initialOwner) internal initializer {
+    function __ContractWallet_init_unchained(address initialOwner) internal {
         require(initialOwner != address(0), "BurnWallet: owner is a zero address");
         _owner = initialOwner;
         emit OwnershipTransferred(address(0), initialOwner);
@@ -39,7 +39,7 @@ contract BurnWallet is Initializable, ContextUpgradeable, ReentrancyGuardUpgrade
     }
 
     modifier onlyOwner() {
-        require(_owner == _msgSender(), "BurnWallet: caller is not the owner");
+        require(_owner == msg.sender, "BurnWallet: caller is not the owner");
         _;
     }
 
