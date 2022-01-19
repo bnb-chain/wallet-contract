@@ -104,6 +104,7 @@ contract OperatorWallet is Initializable, ContextUpgradeable, ReentrancyGuardUpg
         uint256 idx = hotWalletsMap[hotwallet];
         if (idx != hotWallets.length) {
             hotWallets[idx-1] = hotWallets[hotWallets.length-1];
+            hotWalletsMap[hotWallets[idx-1]] = idx;
         }
         hotWallets.pop();
         numOfHotWallets -=1;
@@ -127,7 +128,7 @@ contract OperatorWallet is Initializable, ContextUpgradeable, ReentrancyGuardUpg
         IERC20Upgradeable(token).safeTransfer(recipient, amount);
     }
 
-    function execTransaction(address to, uint256 value, bytes calldata data) external onlyOwner returns (bool success) {
+    function execTransaction(address to, uint256 value, bytes calldata data) external payable onlyOwner returns (bool success) {
         success = execute(to, value, data, gasleft());
     }
 
