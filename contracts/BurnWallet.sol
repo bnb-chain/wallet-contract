@@ -58,7 +58,7 @@ contract BurnWallet is Initializable, ContextUpgradeable, ReentrancyGuardUpgrade
         _pendingOwner = address(0);
     }
 
-    function burn(address token, uint256 amount) external onlyOwner returns (bool success){
+    function burn(address token, uint256 amount) external onlyOwner nonReentrant returns (bool success){
         success = IMintAndBurnable(token).burn(amount);
     }
 }
