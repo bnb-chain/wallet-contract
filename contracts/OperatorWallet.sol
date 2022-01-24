@@ -121,8 +121,13 @@ contract OperatorWallet is Initializable, ContextUpgradeable, ReentrancyGuardUpg
         _operator = newOperator;
     }
 
-    function mint(address token, uint256 amount) external onlyOperator nonReentrant returns (bool success){
-        success = IMintAndBurnable(token).mint(amount);
+    function mint(address token, address recipient, uint256 amount) external onlyOperator nonReentrant{
+        require(isHotWallet(recipient) || address(this) == recipient, "OperatorWallet: recipient is not a hot wallet or self");
+        bool success = IMintAndBurnable(token).mint(amount);
+        require(success, "OperatorWallet: failed to mint");
+        if(isHotWallet(recipient)){
+            IERC20Upgradeable(token).safeTransfer(recipient, amount);
+        }
     }
 
     function transfer(address token, address recipient, uint256 amount) external onlyOperator nonReentrant{

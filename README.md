@@ -18,7 +18,7 @@ Operator;  EOA, custody account who can mint and transfer ERC20 token.
 Owner:  EOA,  ledger account who can manage owner and whitelist hot wallet accounts.
 
 This Operator Contract  has 5 interfaces:
-1. [Operator] Mint token to owner contract;  mint(token address, amount uint256)
+1. [Operator] Mint token to owner contract or hot wallet;  mint(token address, to address, amount uint256)
 2. [Operator] Transfer token to whitelist hot wallet;  transfer(token address, to address, amount uint256)
 3. [Owner] Add whitelist address;  addWhitelist(hotwallet address)	
 4. [Owner] Remove whitelist address; removeWhitelist(hotwallet address)
@@ -49,8 +49,8 @@ Run deploy:
 ```
 
 ### Testnet
-Factory: https://testnet.bscscan.com/address/0x824a8FbF3a4C4435006D9a8e01567aB1a50d2D81
+Factory: https://testnet.bscscan.com/address/0x593eCAb78464124fADd3Da1f0B29B0B77521E417
 
-OperatorWallet: https://testnet.bscscan.com/address/0x7d56da69CfE2f867c50A639A6D91f1badAed5A0C
+OperatorWallet: https://testnet.bscscan.com/address/0xae9550823D4AC8A9911ef64d69c54829aD7b5F78
 
-BurnWallet: https://testnet.bscscan.com/address/0x37B25ba56767794f3cA6CE8b52F8e6259F1Ff6d4
+BurnWallet: https://testnet.bscscan.com/address/0xC873ad24df40ef7E69ee055893D00cb7D4529d1A
