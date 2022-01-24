@@ -149,7 +149,7 @@ contract('Operator Wallet: Owner Operation', (accounts) => {
             assert.ok(error.toString().includes("OperatorWallet: caller is not the owner"));
         }
         await wallet.withdraw("0x0000000000000000000000000000000000000000", {from: owner});
-        await wallet.mint(token.address, web3.utils.toBN(1e18), {from: operator});
+        await wallet.mint(token.address, wallet.address, web3.utils.toBN(1e18), {from: operator});
         try{
             await wallet.withdraw(token.address, {from: nonOwner});
             assert.fail();
@@ -170,12 +170,20 @@ contract('Operator Wallet:  Operator and burn', (accounts) => {
         const operator = accounts[1];
         const nonOperator = accounts[9];
         try{
-            await wallet.mint(token.address, web3.utils.toBN(1e18), {from: nonOperator});
+            await wallet.mint(token.address, wallet.address, web3.utils.toBN(1e18), {from: nonOperator});
             assert.fail();
         }catch(error){
             assert.ok(error.toString().includes("OperatorWallet: caller is not the operator"));
         }
-        await wallet.mint(token.address, web3.utils.toBN(1e18), {from: operator});
+        try{
+            await wallet.mint(token.address, accounts[6], web3.utils.toBN(1e18), {from: operator});
+            assert.fail();
+        }catch(error){
+            assert.ok(error.toString().includes("OperatorWallet: recipient is not a hot wallet or self"));
+        }
+        await wallet.addHotWallet(accounts[6], {from: accounts[0]});
+        await wallet.mint(token.address, accounts[6], web3.utils.toBN(1e18), {from: operator});
+        await wallet.mint(token.address, wallet.address, web3.utils.toBN(1e18), {from: operator});
         const balance = await token.balanceOf.call(wallet.address);
         assert.ok(balance.toString() === web3.utils.toBN(1e18).toString());
     });
@@ -186,7 +194,7 @@ contract('Operator Wallet:  Operator and burn', (accounts) => {
         const token = await ERC20ABC.deployed();
         const operator = accounts[1];
         const nonOperator = accounts[9];
-        await wallet.mint(token.address, web3.utils.toBN(1e18), {from: operator});
+        await wallet.mint(token.address, wallet.address,  web3.utils.toBN(1e18), {from: operator});
         await wallet.addHotWallet(accounts[2], {from: accounts[0]});
         try{
             await wallet.transfer(token.address, accounts[2], web3.utils.toBN(1e17), {from: nonOperator});
