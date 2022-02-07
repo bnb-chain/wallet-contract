@@ -4,11 +4,12 @@ import "./lib/IMintAndBurnable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
-contract OperatorWallet is Initializable, ContextUpgradeable, ReentrancyGuardUpgradeable {
+contract OperatorWallet is Initializable, ContextUpgradeable, ReentrancyGuardUpgradeable, PausableUpgradeable{
 
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
@@ -32,6 +33,7 @@ contract OperatorWallet is Initializable, ContextUpgradeable, ReentrancyGuardUpg
     receive() external payable {}
 
     function initialize(address initialOwner, address initialOperator) external initializer{
+        __Pausable_init();
         __ContractWallet_init(initialOwner, initialOperator);
     }
 
@@ -43,6 +45,7 @@ contract OperatorWallet is Initializable, ContextUpgradeable, ReentrancyGuardUpg
 
     function __ContractWallet_init_unchained(address initialOwner, address initialOperator) internal {
         require(initialOwner != address(0), "OperatorWallet: owner is a zero address");
+        require(initialOperator != address(0), "OperatorWallet: operator is a zero address");
 
         _owner = initialOwner;
         _operator = initialOperator;
@@ -64,8 +67,8 @@ contract OperatorWallet is Initializable, ContextUpgradeable, ReentrancyGuardUpg
         _;
     }
 
-    modifier onlyOperator() {
-        require(_operator == msg.sender, "OperatorWallet: caller is not the operator");
+    modifier onlyOperatorAndOwner() {
+        require(_operator == msg.sender || _owner == msg.sender, "OperatorWallet: caller is not operator or owner");
         _;
     }
 
@@ -73,7 +76,15 @@ contract OperatorWallet is Initializable, ContextUpgradeable, ReentrancyGuardUpg
         return hotWalletsMap[account] > 0;
     }
 
-    function transferOwnership(address newOwner) external onlyOwner {
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    function unpause() external onlyOwner {
+        _unpause();
+    }
+
+    function transferOwnership(address newOwner) external whenNotPaused onlyOwner {
         require(newOwner != address(0), "OperatorWallet: new owner is a zero address");
         require(newOwner != _owner, "OperatorWallet: new owner is the same as the current owner");
 
@@ -81,14 +92,14 @@ contract OperatorWallet is Initializable, ContextUpgradeable, ReentrancyGuardUpg
         _pendingOwner = newOwner;
     }
 
-    function acceptOwnership() external {
+    function acceptOwnership() whenNotPaused external {
         require(msg.sender == _pendingOwner, "OperatorWallet: no authorization");
         emit OwnershipAccepted(_owner, _pendingOwner);
         _owner = _pendingOwner;
         _pendingOwner = address(0);
     }
 
-    function addHotWallet(address hotwallet) external onlyOwner {
+    function addHotWallet(address hotwallet) external whenNotPaused onlyOwner {
         require(hotwallet != address(0), "OperatorWallet: hotwallet is a zero address");
         require(hotWalletsMap[hotwallet] == 0, "OperatorWallet: hotwallet already exist");
         hotWallets.push(hotwallet);
@@ -100,7 +111,7 @@ contract OperatorWallet is Initializable, ContextUpgradeable, ReentrancyGuardUpg
         return hotWallets.length;
     }
 
-    function removeHotWallet(address hotwallet) external onlyOwner {
+    function removeHotWallet(address hotwallet) external whenNotPaused onlyOwner {
         require(hotwallet != address(0), "OperatorWallet: hotwallet is a zero address");
         require(hotWalletsMap[hotwallet] > 0, "OperatorWallet: hotwallet do not exist");
         uint256 idx = hotWalletsMap[hotwallet];
@@ -113,7 +124,7 @@ contract OperatorWallet is Initializable, ContextUpgradeable, ReentrancyGuardUpg
         emit HotWalletRemoved(hotwallet);
     }
 
-    function changeOperator(address newOperator) external onlyOwner {
+    function changeOperator(address newOperator) external whenNotPaused onlyOwner {
         require(newOperator != address(0), "OperatorWallet: operator is a zero address");
         require(newOperator != _operator, "OperatorWallet: already an operator");
 
@@ -121,7 +132,7 @@ contract OperatorWallet is Initializable, ContextUpgradeable, ReentrancyGuardUpg
         _operator = newOperator;
     }
 
-    function mint(address token, address recipient, uint256 amount) external onlyOperator nonReentrant{
+    function mint(address token, address recipient, uint256 amount) external whenNotPaused onlyOperatorAndOwner nonReentrant{
         require(isHotWallet(recipient) || address(this) == recipient, "OperatorWallet: recipient is not a hot wallet or self");
         bool success = IMintAndBurnable(token).mint(amount);
         require(success, "OperatorWallet: failed to mint");
@@ -130,12 +141,12 @@ contract OperatorWallet is Initializable, ContextUpgradeable, ReentrancyGuardUpg
         }
     }
 
-    function transfer(address token, address recipient, uint256 amount) external onlyOperator nonReentrant{
+    function transfer(address token, address recipient, uint256 amount) external whenNotPaused onlyOperatorAndOwner nonReentrant{
         require(isHotWallet(recipient), "OperatorWallet: recipient is not a hotwallet");
         IERC20Upgradeable(token).safeTransfer(recipient, amount);
     }
 
-    function execTransaction(address to, uint256 value, bytes calldata data) external payable onlyOwner nonReentrant returns (bool success) {
+    function execTransaction(address to, uint256 value, bytes calldata data) external payable whenNotPaused onlyOwner nonReentrant returns (bool success) {
         success = execute(to, value, data, gasleft());
     }
 
@@ -146,7 +157,7 @@ contract OperatorWallet is Initializable, ContextUpgradeable, ReentrancyGuardUpg
         }
     }
 
-    function withdraw(address token) external onlyOwner nonReentrant {
+    function withdraw(address token) external whenNotPaused onlyOwner nonReentrant {
         uint256 assetBalance;
         if (token == address(0)) {
             address self = address(this);

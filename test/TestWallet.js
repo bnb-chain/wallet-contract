@@ -159,6 +159,23 @@ contract('Operator Wallet: Owner Operation', (accounts) => {
         await wallet.withdraw(token.address, {from: owner});
         const balance = await token.balanceOf.call(owner);
         assert.ok(balance.toString() === web3.utils.toBN(1e18).toString());
+
+        try{
+            await wallet.pause({from: nonOwner});
+            assert.fail();
+        }catch(error){
+            assert.ok(error.toString().includes("OperatorWallet: caller is not the owner"));
+        }
+
+        await wallet.pause({from: owner});
+        try{
+            await wallet.withdraw(token.address, {from: owner});
+            assert.fail();
+        }catch(error){
+            assert.ok(error.toString().includes("Pausable: paused"));
+        }
+        await wallet.unpause({from: owner});
+        await wallet.withdraw(token.address, {from: owner});
     });
 });
 
@@ -173,7 +190,7 @@ contract('Operator Wallet:  Operator and burn', (accounts) => {
             await wallet.mint(token.address, wallet.address, web3.utils.toBN(1e18), {from: nonOperator});
             assert.fail();
         }catch(error){
-            assert.ok(error.toString().includes("OperatorWallet: caller is not the operator"));
+            assert.ok(error.toString().includes("OperatorWallet: caller is not operator or owner"));
         }
         try{
             await wallet.mint(token.address, accounts[6], web3.utils.toBN(1e18), {from: operator});
@@ -200,7 +217,7 @@ contract('Operator Wallet:  Operator and burn', (accounts) => {
             await wallet.transfer(token.address, accounts[2], web3.utils.toBN(1e17), {from: nonOperator});
             assert.fail();
         }catch(error){
-            assert.ok(error.toString().includes("OperatorWallet: caller is not the operator"));
+            assert.ok(error.toString().includes("OperatorWallet: caller is not operator or owner"));
         }
         try{
             await wallet.transfer(token.address, accounts[3], web3.utils.toBN(1e17), {from: operator});
