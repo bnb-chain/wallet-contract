@@ -49,8 +49,8 @@ Run deploy:
 ```
 
 ### Testnet
-Factory: https://testnet.bscscan.com/address/0x593eCAb78464124fADd3Da1f0B29B0B77521E417
+Factory: https://testnet.bscscan.com/address/0x4dE8DB8a9151793e82ff8830184E184DF4bb401F
 
-OperatorWallet: https://testnet.bscscan.com/address/0xae9550823D4AC8A9911ef64d69c54829aD7b5F78
+OperatorWallet: https://testnet.bscscan.com/address/0x5c66e52d1b410F787715c75a7bB68914D6860986
 
-BurnWallet: https://testnet.bscscan.com/address/0xC873ad24df40ef7E69ee055893D00cb7D4529d1A
+BurnWallet: https://testnet.bscscan.com/address/0x6B1C6ED390Adba685Cc4E8Fb148c203De000B2D2
