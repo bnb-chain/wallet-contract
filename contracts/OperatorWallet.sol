@@ -102,6 +102,7 @@ contract OperatorWallet is Initializable, ContextUpgradeable, ReentrancyGuardUpg
     function addHotWallet(address hotwallet) external whenNotPaused onlyOwner {
         require(hotwallet != address(0), "OperatorWallet: hotwallet is a zero address");
         require(hotWalletsMap[hotwallet] == 0, "OperatorWallet: hotwallet already exist");
+        require(hotwallet != address(this), "OperatorWallet: operatorWallet itself can not be a hotwallet");
         hotWallets.push(hotwallet);
         hotWalletsMap[hotwallet] = hotWallets.length;
         emit HotWalletAdded(hotwallet);
